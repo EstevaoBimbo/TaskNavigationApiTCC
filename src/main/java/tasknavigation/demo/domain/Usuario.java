@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 @Entity
 public class Usuario {
 
@@ -45,6 +47,7 @@ public class Usuario {
     // Relacionamento com equipe
     @ManyToOne
     @JoinColumn(name = "equipe_id")
+    @JsonBackReference
     private Equipe equipe;
 
     // Construtores
@@ -94,5 +97,7 @@ public class Usuario {
     public void setCodigoExpiracao(LocalDateTime codigoExpiracao) { this.codigoExpiracao = codigoExpiracao; }
 
     public Equipe getEquipe() { return equipe; }
-    public void setEquipe(Equipe equipe) { this.equipe = equipe; }
+    public void setEquipe(Equipe equipe ) { this.equipe = equipe; }
+
+
 }

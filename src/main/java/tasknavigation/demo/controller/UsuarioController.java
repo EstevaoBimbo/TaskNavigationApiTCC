@@ -19,10 +19,10 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/usuarios")
 @CrossOrigin(origins = {
-    "http://localhost:59186",  // Flutter Web
+    "http://localhost:61759",  // Flutter Web
     "http://localhost:5173",   
     "http://10.0.2.2:8080",    
-    "http://192.168.56.1:8080"
+    "http://172.19.0.112:8080"
 })
 public class UsuarioController {
 
@@ -50,7 +50,7 @@ public class UsuarioController {
         String nome = (String) body.get("nome");
         String email = (String) body.get("email");
         String senha = (String) body.get("senha");
-        Boolean isWebLogin = (Boolean) body.getOrDefault("isWebLogin", false);
+        String nivel = (String) body.getOrDefault("nivel", "USUARIO");
 
         Optional<Usuario> usuarioExistente = usuarioService.buscarPorEmail(email);
         if (usuarioExistente.isPresent()) {
@@ -61,7 +61,7 @@ public class UsuarioController {
         usuario.setNome(nome);
         usuario.setEmail(email);
         usuario.setSenha(passwordEncoder.encode(senha));
-        usuario.setNivelAcesso(isWebLogin ? "ADMIN" : "USUARIO");
+        usuario.setNivelAcesso(nivel.toUpperCase());
 
         Usuario novoUsuario = usuarioService.salvar(usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(novoUsuario);
@@ -105,11 +105,21 @@ public class UsuarioController {
     @PostMapping("/recuperar-senha")
     public ResponseEntity<String> recuperarSenha(@RequestBody Map<String, String> body) {
         String email = body.get("email");
+        String codigo = body.get("codigo");
         String novaSenha = body.get("novaSenha");
+
         Optional<Usuario> usuarioOpt = usuarioService.buscarPorEmail(email);
         if (usuarioOpt.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário não encontrado.");
 
         Usuario usuario = usuarioOpt.get();
+
+        // Validar código
+        if (!codigo.equals(usuario.getCodigoRecuperacao()))
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Código inválido.");
+        if (usuario.getCodigoExpiracao() == null || usuario.getCodigoExpiracao().isBefore(LocalDateTime.now()))
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Código expirado.");
+
+        // Redefinir senha
         usuario.setSenha(passwordEncoder.encode(novaSenha));
         usuario.setCodigoRecuperacao(null);
         usuario.setCodigoExpiracao(null);
@@ -145,7 +155,7 @@ public class UsuarioController {
     /** Aceitar convite para equipe */
     @PostMapping("/aceitar-convite")
     public ResponseEntity<?> aceitarConvite(@RequestBody Map<String, String> body) {
-        String email = body.get("email"); // email do usuário logado
+        String email = body.get("email");
         String codigoConvite = body.get("codigoConvite");
 
         Optional<Usuario> usuarioOpt = usuarioService.buscarPorEmail(email);

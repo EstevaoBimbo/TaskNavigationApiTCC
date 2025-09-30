@@ -7,51 +7,86 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tasknavigation.demo.domain.Usuario;
+import tasknavigation.demo.service.UsuarioService;
 import tasknavigation.demo.util.JwtUtil;
 
 import java.io.IOException;
 import java.util.List;
 
+@Component
 public class JwtFilter extends OncePerRequestFilter {
+
+    private final UsuarioService usuarioService;
+
+    public JwtFilter(@org.springframework.context.annotation.Lazy UsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        String path = request.getRequestURI();
-
-        // Ignora favicon e arquivos estáticos
-        if (path.equals("/favicon.ico") || path.startsWith("/static/")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        long start = System.currentTimeMillis();
-        System.out.println("JwtFilter: entrando na requisição " + path);
-
         String authHeader = request.getHeader("Authorization");
+        System.out.println("\n🔍 Iniciando filtro JWT para: " + request.getServletPath());
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            String email = JwtUtil.validateToken(token);
 
-            if (email == null) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Token inválido ou expirado");
-                System.out.println("JwtFilter: token inválido em " + path);
+            try {
+                String email = JwtUtil.validateToken(token);
+                if (email == null) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido ou expirado");
+                    return;
+                }
+
+                Usuario usuario = usuarioService.buscarPorEmail(email).orElse(null);
+                if (usuario == null) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Usuário não encontrado");
+                    return;
+                }
+
+                // Padroniza role e adiciona ROLE_
+                String nivel = usuario.getNivelAcesso();
+                if (nivel == null || nivel.isBlank()) {
+                    nivel = "USUARIO";
+                } else {
+                    nivel = nivel.trim().toUpperCase();
+                    if (!nivel.equals("USUARIO") && !nivel.equals("ADMIN")) nivel = "USUARIO";
+                }
+                String role = "ROLE_" + nivel;
+
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                usuario,
+                                null,
+                                List.of(new SimpleGrantedAuthority(role))
+                        );
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                System.out.println("✅ Autenticação configurada com sucesso! Role: " + role);
+
+            } catch (Exception e) {
+                System.err.println("🔥 Erro durante autenticação JWT: " + e.getMessage());
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Falha na autenticação");
                 return;
             }
-
-            // Autentica o usuário no contexto do Spring
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority("USER")));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);
-        long duration = System.currentTimeMillis() - start;
-        System.out.println("JwtFilter: requisição " + path + " processada em " + duration + "ms");
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        String method = request.getMethod();
+
+        // Liberar login, registro, OPTIONS e GET /tarefas
+        return path.equals("/usuarios/login")
+                || path.equals("/usuarios/registro")
+                || "OPTIONS".equalsIgnoreCase(method)
+                || (path.equals("/tarefas") && "GET".equalsIgnoreCase(method));
     }
 }
