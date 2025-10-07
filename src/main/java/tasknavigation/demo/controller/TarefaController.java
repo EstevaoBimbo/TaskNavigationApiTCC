@@ -34,11 +34,15 @@ public class TarefaController {
         return tarefa.map(ResponseEntity::ok)
                      .orElseGet(() -> ResponseEntity.notFound().build());
     }
-
+    
 @PostMapping
 public ResponseEntity<?> criar(@RequestBody TarefaDTO dto) {
 
-    Usuario usuario = tarefaService.buscarUsuarioPorId(1L); // usuário de teste
+    if (dto.getIdUsuario() == null) {
+        return ResponseEntity.badRequest().body("O ID do usuário é obrigatório.");
+    }
+
+    Usuario usuario = tarefaService.buscarUsuarioPorId(dto.getIdUsuario());
     if (usuario == null) {
         return ResponseEntity.badRequest().body("Usuário não encontrado.");
     }
@@ -48,17 +52,16 @@ public ResponseEntity<?> criar(@RequestBody TarefaDTO dto) {
     tarefa.setDescricao(dto.getDescricao());
     tarefa.setStatus(dto.getStatus() != null ? dto.getStatus() : "Pendente");
     tarefa.setPrioridade(dto.getPrioridade() != null ? dto.getPrioridade() : "Média");
+    tarefa.setPrazo(dto.getPrazo());
     tarefa.setUsuario(usuario);
 
-    // projeto opcional
     if (dto.getIdProjeto() != null) {
         Projeto projeto = tarefaService.buscarProjetoPorId(dto.getIdProjeto());
-        if (projeto != null) {
-            tarefa.setProjeto(projeto);
-        }
+        tarefa.setProjeto(projeto); // mesmo se null, tá ok
     }
 
-    return ResponseEntity.ok(tarefaService.salvar(tarefa));
+    Tarefa salva = tarefaService.salvar(tarefa);
+    return ResponseEntity.ok(salva);
 }
 
 
