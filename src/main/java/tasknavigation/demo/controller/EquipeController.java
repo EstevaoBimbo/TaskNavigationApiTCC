@@ -8,7 +8,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import tasknavigation.demo.domain.Equipe;
 import tasknavigation.demo.domain.Usuario;
+<<<<<<< HEAD
 import tasknavigation.demo.domain.enums.NivelAcesso;
+=======
+>>>>>>> 63182cd12d6df87febb98f402d86d8322a31da1c
 import tasknavigation.demo.service.EmailService;
 import tasknavigation.demo.service.EquipeService;
 import tasknavigation.demo.service.UsuarioService;
@@ -118,7 +121,11 @@ public class EquipeController {
                     Usuario novoUsuario = new Usuario();
                     novoUsuario.setEmail(email);
                     novoUsuario.setNome(email.split("@")[0]); // nome padrão
+<<<<<<< HEAD
                     novoUsuario.setNivelAcesso(NivelAcesso.USUARIO);
+=======
+                    novoUsuario.setNivelAcesso("USUARIO");
+>>>>>>> 63182cd12d6df87febb98f402d86d8322a31da1c
                     return usuarioService.salvar(novoUsuario);
                 });
 

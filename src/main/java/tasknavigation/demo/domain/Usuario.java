@@ -12,6 +12,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import tasknavigation.demo.auth.AuthenticationResponse;
 import tasknavigation.demo.domain.enums.NivelAcesso;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 @Entity
 public class Usuario implements UserDetails {
 
@@ -117,6 +119,7 @@ public class Usuario implements UserDetails {
     public void setEquipe(Equipe equipe ) { this.equipe = equipe; }
 
 
+<<<<<<< HEAD
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return nivelAcesso.getAuthorities();
@@ -167,4 +170,6 @@ public class Usuario implements UserDetails {
     public void setAuthenticationResponse(AuthenticationResponse authenticationResponse) {
         this.authenticationResponse = authenticationResponse;
     }
+=======
+>>>>>>> 63182cd12d6df87febb98f402d86d8322a31da1c
 }

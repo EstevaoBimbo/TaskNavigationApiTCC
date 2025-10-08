@@ -24,8 +24,13 @@ import java.util.UUID;
 @CrossOrigin(origins = {
     "http://localhost:61759",  // Flutter Web
     "http://localhost:5173",   
+<<<<<<< HEAD
     "http://172.19.2.78:8080",    
     "http://172.19.2.78:8080"
+=======
+    "http://10.0.2.2:8080",    
+    "http://172.19.0.112:8080"
+>>>>>>> 63182cd12d6df87febb98f402d86d8322a31da1c
 })
 public class UsuarioController {
 
@@ -69,6 +74,7 @@ public class UsuarioController {
         Usuario usuario = new Usuario();
         usuario.setNome(nome);
         usuario.setEmail(email);
+<<<<<<< HEAD
         usuario.setSenha(senha);
         //usuario.setSenha(passwordEncoder.encode(senha));
 
@@ -84,6 +90,10 @@ public class UsuarioController {
         registerRequest.setNivelAcesso(usuario.getNivelAcesso());
         //Usuario novoUsuario = usuarioService.salvar(usuario);
         Usuario novoUsuario = authenticationService.register(registerRequest);
+=======
+        usuario.setSenha(passwordEncoder.encode(senha));
+        usuario.setNivelAcesso(nivel.toUpperCase());
+>>>>>>> 63182cd12d6df87febb98f402d86d8322a31da1c
 
         return ResponseEntity.status(HttpStatus.CREATED).body(novoUsuario);
     }
